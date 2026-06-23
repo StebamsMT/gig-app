@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gig App - Marketplace Avanzado estilo Messenger</title>
+    
+    <!-- Conectores oficiales de Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 460px;
+            position: relative;
+        }
+
+        .card {
+            background: #ffffff;
+            padding: 35px 25px 25px 25px;
+            border-radius: 24px;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
+            text-align: center;
+            animation: slideUp 0.3s cubic-bezier(0.1, 0.8, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-atras-nav {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: #e4e6eb;
+            border: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #050505;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .btn-atras-nav:hover {
+            background: #d8dadf;
+            transform: scale(1.05);
+        }
+
+        .notificacion-sistema {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: none;
+            text-align: left;
+            border-left: 5px solid #ef4444;
+            animation: fadeIn 0.2s ease-in;
+        }
+        .notificacion-sistema.exito {
+            background: #e7f3ff;
+            color: #1877f2;
+            border-left-color: #1877f2;
+        }
+
+        .logo-placeholder {
+            width: 85px;
+            height: 85px;
+            background: linear-gradient(135deg, #1877f2, #0056b3);
+            border-radius: 28px;
+            margin: 10px auto 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 8px 20px rgba(24, 119, 242, 0.3);
+        }
+
+        h2 { color: #050505; font-size: 24px; margin-bottom: 8px; font-weight: 700; margin-top: 10px; }
+        h3 { color: #050505; font-size: 16px; margin-bottom: 12px; text-align: left; font-weight: 600; margin-top: 15px; }
+        .subtitulo { color: #65676b; font-size: 13px; margin-bottom: 20px; line-height: 1.5; }
+
+        .btn-rol {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 14px;
+            background: #f0f2f5;
+            font-size: 15px;
+            font-weight: 600;
+            color: #050505;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-rol:hover { background: #e4e6eb; border-color: #bcc0c4; }
+
+        .lnk-secundario { display: block; margin-top: 15px; font-size: 12px; color: #65676b; text-decoration: none; cursor: pointer; font-weight: 600; }
+        .lnk-secundario:hover { text-decoration: underline; }
+
+        .input-group { text-align: left; margin-bottom: 14px; }
+        label { display: block; margin-bottom: 5px; color: #65676b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        select, input, textarea { width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 12px; font-size: 14px; outline: none; background-color: #f0f2f5; color: #050505; }
+        select:focus, input:focus, textarea:focus { border-color: #1877f2; background-color: #fff; box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2); }
+
+        button.btn-primario {
+            width: 100%; background: #1877f2; color: white; border: none; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 8px; transition: background 0.2s;
+        }
+        button.btn-primario:hover { background: #166fe5; }
+
+        .flex-group { display: flex; gap: 10px; }
+
+        /* INTERFAZ PERFIL */
+        .perfil-container-pro {
+            background: #f0f2f5;
+            border-radius: 18px;
+            padding: 20px;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        .perfil-avatar-row { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .avatar-letra { width: 55px; height: 55px; background: linear-gradient(135deg, #1877f2, #0056b3); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; text-transform: uppercase; }
+        .perfil-info-datos { flex: 1; }
+        
+        .perfil-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: white; padding: 12px; border-radius: 12px; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .meta-item { color: #65676b; }
+        .meta-item span { font-weight: bold; color: #050505; display: block; margin-top: 3px; }
+
+        /* CANALES DE CHATS */
+        .lista-chats-disponibles { margin-top: 15px; text-align: left; }
+        .item-chat-link {
+            background: #ffffff; padding: 14px; border-radius: 16px; margin-bottom: 10px; cursor: pointer; font-size: 13px; border: 1px solid #e4e6eb; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+        .item-chat-link:hover { border-color: #1877f2; background: #e7f3ff; transform: translateY(-1px); }
+        .badge-chat-status { font-size: 10px; padding: 3px 8px; border-radius: 6px; font-weight: bold; background: #e4e6eb; color: #050505; text-transform: uppercase; }
+
+        /* CATALOGO */
+        .servicio-card { background: #fff; border: 1px solid #e4e6eb; border-radius: 16px; padding: 16px; text-align: left; margin-bottom: 12px; position: relative; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .servicio-card:hover { border-color: #1877f2; transform: translateY(-1px); }
+        .servicio-precio { font-weight: 700; color: #1877f2; font-size: 16px; margin-top: 6px; }
+        .servicio-ubicacion { font-size: 11px; color: #1877f2; background: #e7f3ff; padding: 4px 10px; border-radius: 8px; display: inline-block; margin-top: 6px; font-weight: 600; }
+        .btn-contratar-action { background: #1877f2; color: white; border: none; padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; text-align: center; display: block; }
+        .btn-contratar-action:hover { background: #166fe5; }
+
+        /* BOTONES DE REDIRECCIÓN EN CHAT */
+        .btn-maps-action {
+            background: #ea4335; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; padding: 10px 14px; border-radius: 12px; font-size: 13px; font-weight: bold; margin-bottom: 10px; width: 100%; text-align: center; box-shadow: 0 2px 4px rgba(234,67,53,0.2);
+        }
+        .btn-maps-action:hover { background: #dc3122; }
+
+        .btn-telefono {
+            background: #25d366; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; padding: 10px 14px; border-radius: 12px; font-size: 13px; font-weight: bold; margin-bottom: 10px; width: 100%; text-align: center;
+        }
+
+        /* CLON DE MESSENGER CHAT BOX */
+        .chat-container { background: #ffffff; display: flex; flex-direction: column; text-align: left; }
+        .chat-mensajes-messenger { 
+            height: 300px; overflow-y: auto; background: #ffffff; border: 1px solid #f0f2f5; border-radius: 16px; padding: 15px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px;
+        }
+        
+        /* Burbujas tipo Messenger */
+        .bubble-row { display: flex; width: 100%; margin-bottom: 2px; }
+        .bubble-row.bubble-mio { justify-content: flex-end; }
+        .bubble-row.bubble-otro { justify-content: flex-start; }
+
+        .messenger-bubble {
+            max-width: 75%; padding: 10px 14px; font-size: 14px; line-height: 1.4; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+        }
+        .bubble-mio .messenger-bubble {
+            background: #0084ff; color: white; border-radius: 18px 18px 4px 18px; text-align: right;
+        }
+        .bubble-otro .messenger-bubble {
+            background: #e4e6eb; color: #050505; border-radius: 18px 18px 18px 4px; text-align: left;
+        }
+        .messenger-meta-name { font-size: 10px; color: #65676b; margin-bottom: 2px; display: block; font-weight: 600; }
+        .bubble-mio .messenger-meta-name { display: none; }
+
+        /* PANEL ADMIN */
+        .item-transaccion { background: #f0f2f5; border: 1px solid #ced4da; border-radius: 14px; padding: 14px; text-align: left; margin-bottom: 12px; font-size: 13px; position: relative; }
+        .btn-eliminar-admin { background: #fee2e2; color: #ef4444; border: none; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; position: absolute; right: 14px; top: 14px; }
+        
+        .panel-purga-total-box {
+            background: #fff5f5; border: 2px dashed #f87171; padding: 15px; border-radius: 16px; margin-bottom: 20px; text-align: left;
+        }
+        .btn-danger-purga { background: #dc2626; color: white; border: none; padding: 11px; border-radius: 10px; font-size: 12px; font-weight: bold; cursor: pointer; margin-top: 8px; width: 100%; }
+        .btn-logout { background: #65676b; color: white; width: 100%; padding: 12px; border: none; border-radius: 12px; font-size: 13px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+
+        .hidden { display: none !important; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div id="banner-notificacion" class="notificacion-sistema"></div>
+
+        <!-- VENTANA INICIO -->
+        <div id="ventana-inicio" class="card">
+            <div class="logo-placeholder">GIG</div>
+            <h2>Marketplace Central</h2>
+            <p class="subtitulo">Soporte y servicios técnicos inmediatos en toda Venezuela.</p>
+            <button class="btn-rol" onclick="irAVentana('ventana-login-usuario')">🔑 Ingresar a mi Cuenta</button>
+            <button class="btn-rol" onclick="irAVentana('ventana-seleccion-rol')">✨ Registrarme como Nuevo</button>
+            <span class="lnk-secundario" onclick="irAVentana('ventana-login-admin')">⚙️ Panel de Control Dueño</span>
+        </div>
+
+        <!-- LOGIN -->
+        <div id="ventana-login-usuario" class="card hidden">
+            <button class="btn-atras-nav" onclick="navegarAtras()">←</button>
+            <h2>Iniciar Sesión</h2>
+            <form onsubmit="autenticarUsuarioExistente(event)">
+                <div class="input-group"><label>Nombre de Usuario:</label><input type="text" id="log-username" placeholder="Ej: esteban99" required></div>
+                <button type="submit" class="btn-primario">Entrar</button>
+            </form>
+        </div>
+
+        <!-- SELECCIÓN ROL -->
+        <div id="ventana-seleccion-rol" class="card hidden">
+            <button class="btn-atras-nav" onclick="navegarAtras()">←</button>
+            <h2>Elige tu Perfil</h2>
+            <button class="btn-rol" onclick="irAVentana('ventana-form-cliente')">🙋‍♂️ Cuenta de Cliente (Contratar)</button>
+            <button class="btn-rol" onclick="irAVentana('ventana-form-vendedor')">💼 Cuenta de Vendedor (Ofrecer)</button>
+        </div>
+
+        <!-- FORM CLIENTE -->
+        <div id="ventana-form-cliente" class="card hidden">
+            <button class="btn-atras-nav" onclick="navegarAtras()">←</button>
+            <h2>Perfil de Cliente</h2>
+            <form onsubmit="guardarRegistro(event, 'Cliente')">
+                <div class="input-group"><label>Nombre de Usuario Único:</label><input type="text" id="cli-username" required></div>
+                <div class="input-group"><label>Nombre Completo:</label><input type="text" id="cli-nombre" required></div>
+                <div class="flex-group">
+                    <div class="input-group" style="flex:1;"><label>Edad:</label><input type="number" id="cli-edad" required></div>
+                    <div class="input-group" style="flex:1;"><label>Género:</label>
+                        <select id="cli-genero"><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option></select>
+                    </div>
+                </div>
+                <div class="input-group"><label>Cédula de Identidad:</label><input type="text" id="cli-cedula" required></div>
+                <div class="input-group"><label>Número de Teléfono:</label><input type="tel" id="cli-telefono" placeholder="Ej: 04141234567" required></div>
+                <div class="input-group"><label>📍 Selecciona tu Estado (Venezuela):</label>
+                    <select id="cli-estado" class="select-estados-ven" required></select>
+                </div>
+                <button type="submit" class="btn-primario">Completar Cuenta</button>
+            </form>
+        </div>
+
+        <!-- FORM VENDEDOR -->
+        <div id="ventana-form-vendedor" class="card hidden">
+            <button class="btn-atras-nav" onclick="navegarAtras()">←</button>
+            <h2>Perfil de Vendedor</h2>
+            <form onsubmit="guardarRegistro(event, 'Vendedor')">
+                <div class="input-group"><label>Nombre de Usuario Único:</label><input type="text" id="ven-username" required></div>
+                <div class="input-group"><label>Nombre del Emprendimiento:</label><input type="text" id="ven-emprendimiento" placeholder="Ej: Reparaciones Mata" required></div>
+                <div class="input-group"><label>Nombre del Responsable:</label><input type="text" id="ven-nombre" required></div>
+                <div class="flex-group">
+                    <div class="input-group" style="flex:1;"><label>Edad:</label><input type="number" id="ven-edad" required></div>
+                    <div class="input-group" style="flex:1;"><label>Género:</label><select id="ven-genero"><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option></select></div>
+                </div>
+                <div class="input-group"><label>Cédula o RIF:</label><input type="text" id="ven-cedula" required></div>
+                <div class="input-group"><label>Teléfono Celular:</label><input type="tel" id="ven-telefono" placeholder="Ej: 04247654321" required></div>
+                <div class="input-group"><label>📍 Ubicación Base (Estado):</label>
+                    <select id="ven-estado" class="select-estados-ven" required></select>
+                </div>
+                <button type="submit" class="btn-primario">Completar Registro</button>
+            </form>
+        </div>
+
+        <!-- LOGIN ADMIN -->
+        <div id="ventana-login-admin" class="card hidden">
+            <button class="btn-atras-nav" onclick="navegarAtras()">←</button>
+            <h2>Consola Master</h2>
+            <form onsubmit="verificarLoginAdmin(event)">
+                <div class="input-group"><label>Usuario:</label><input type="text" id="adm-user" required></div>
+                <div class="input-group"><label>Contraseña:</label><input type="password" id="adm-pass" required></div>
+                <button type="submit" class="btn-primario">Acceder</button>
+            </form>
+        </div>
+
+        <!-- PANEL ADMIN -->
+        <div id="ventana-panel-admin" class="card hidden">
+            <h2>Consola General de Auditoría</h2>
+            <div class="panel-purga-total-box">
+                <h4 style="color:#b91c1c; font-size:14px;">⚠️ Destrucción y Limpieza de Base de Datos</h4>
+                <button class="btn-danger-purga" onclick="eliminarTodaLaBaseDeDatos()">🔥 Borrar Toda la Base de Datos</button>
+            </div>
+            <h3 style="text-align:center;">Historial de Órdenes</h3>
+            <div id="lista-ordenes-admin"></div>
+            <button class="btn-logout" onclick="irAVentana('ventana-inicio')">Cerrar Admin</button>
+        </div>
+
+        <!-- PERFIL DE USUARIO CENTRAL -->
+        <div id="ventana-perfil" class="card hidden">
+            <div class="perfil-container-pro">
+                <div class="perfil-avatar-row">
+                    <div class="avatar-letra" id="prof-avatar-inicial">U</div>
+                    <div class="perfil-info-datos">
+                        <h4 id="prof-display-title">Cargando...</h4>
+                        <p>@<span id="prof-display-username">user</span> • <span id="prof-display-badge">Rol</span></p>
+                    </div>
+                </div>
+                <div class="perfil-meta-grid">
+                    <div class="meta-item">Documento:<span id="prof-meta-doc">...</span></div>
+                    <div class="meta-item">📍 Estado Región:<span id="prof-meta-extra">...</span></div>
+                    <div class="meta-item" style="grid-column: span 2; border-top: 1px solid #e4e6eb; padding-top: 5px;">📱 Contacto Teléfono:<span id="prof-meta-telefono" style="color:#1877f2;">...</span></div>
+                </div>
+                <button class="btn-logout" style="margin-top:12px; padding:6px; font-size:11px;" onclick="irAVentana('ventana-inicio')">Cerrar Sesión</button>
+            </div>
+
+            <!-- MIS CHATS ACTIVOS -->
+            <div class="lista-chats-disponibles">
+                <h3>💬 Mis Mensajes en Vivo (Estilo Messenger)</h3>
+                <div id="contenedor-lista-chats"></div>
+            </div>
+
+            <!-- VENDEDOR: AÑADIR SERVICIO -->
+            <div id="area-vendedor-publicar" class="hidden" style="text-align: left; border-top: 1px solid #e4e6eb; padding-top: 15px;">
+                <h3>⚙️ Añadir Nuevo Servicio al Catálogo</h3>
+                <form onsubmit="publicarServicioVendedor(event)">
+                    <div class="input-group"><label>Nombre del Servicio Técnico:</label><input type="text" id="srv-titulo" placeholder="Ej: Reparación de Celulares y Pistas" required></div>
+                    <div class="input-group"><label>Descripción del Trabajo:</label><textarea id="srv-desc" rows="2" placeholder="Detalla lo que incluye..." required></textarea></div>
+                    <div class="input-group"><label>Costo ($ USD):</label><input type="number" step="0.01" id="srv-precio" required></div>
+                    <div class="input-group">
+                        <label id="lbl-ubicacion-dinamica-estado">📍 Dirección Física Exacta:</label>
+                        <input type="text" id="srv-direccion-exacta" placeholder="Ej: Av. Medina Jiménez, Local Nro 2" required>
+                    </div>
+                    <button type="submit" class="btn-primario" style="background:#00a400;">Publicar en Cartelera</button>
+                </form>
+            </div>
+
+            <!-- CLIENTE: CATALOGO -->
+            <div id="area-servicios-cliente" class="hidden">
+                <h2>Servicios Técnicos Disponibles</h2>
+                <p class="subtitulo" id="txt-catalogo-status">Buscando...</p>
+                <div id="catalogo-dinamico-servicios"></div>
+            </div>
+        </div>
+
+        <!-- VENTANA DE CHAT SALA - CLON DE MESSENGER -->
+        <div id="ventana-chat-sala" class="card hidden" style="padding-top: 50px;">
+            <button class="btn-atras-nav" onclick="irAVentana('ventana-perfil')">← Salir al Perfil</button>
+            <h2 id="sala-chat-titulo" style="font-size: 20px; margin-top: 15px;">Sala Messenger</h2>
+            <p id="sala-chat-subtitulo" style="font-size:12px; color:#65676b; margin-bottom:12px;"></p>
+            
+            <!-- Acciones Rápidas (Google Maps) -->
+            <div id="contenedor-acciones-chat-dinamicas"></div>
+            
+            <!-- Ventana de mensajes -->
+            <div id="box-mensajes" class="chat-mensajes-messenger"></div>
+            
+            <form onsubmit="enviarMensajeChat(event)" class="flex-group">
+                <input type="text" id="chat-input-texto" placeholder="Escribe un mensaje aquí..." autocomplete="off" required>
+                <button type="submit" class="btn-primario" style="margin-top:0; width:auto; padding:10px 18px; background: #0084ff;">Enviar</button>
+            </form>
+        </div>
+
+        <!-- PASARELA DE PAGO -->
+        <div id="ventana-pago" class="card hidden">
+            <button class="btn-atras-nav" onclick="navegarAtras()">←</button>
+            <h2>Confirmación de Pago Móvil</h2>
+            <div style="font-size:12px; padding:12px; background:#f0f2f5; border-radius:12px; margin-bottom:12px; text-align: left;">
+                <p><strong>PAGO MÓVIL DIRECTO DEL SOPORTE:</strong></p>
+                <p>Banesco (0134) | Tel: 0412-5555555 | Cédula: V-12345678</p>
+            </div>
+            <div id="monto-bolivares" style="font-weight:bold; color:#1877f2; font-size:16px; margin-bottom:15px;">...</div>
+            <form onsubmit="procesarPagoMovel(event)">
+                <div class="input-group"><label>Ingresa el número de Referencia (6 dígitos):</label><input type="number" id="referencia" required></div>
+                <button type="submit" class="btn-primario">Validar y Abrir Chat de Inmediato</button>
+            </form>
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
